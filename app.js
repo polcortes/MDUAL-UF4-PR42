@@ -77,7 +77,7 @@ ws.onConnection = (socket, id) => {
     matches.push({
       playerX: id, 
       playerO: "", 
-      board: ["", "", "", "", "", "", "", "", ""],
+      board: createboard(),
       nextTurn: "X"
     })
   } else {
@@ -101,7 +101,7 @@ ws.onConnection = (socket, id) => {
       matches.push({ 
         playerX: id, 
         playerO: "", 
-        board: ["", "", "", "", "", "", "", "", ""],
+        board: createboard(),
         nextTurn: "X"
       })
     }
@@ -296,7 +296,7 @@ ws.onClose = (socket, id) => {
     } else {
       
       // Reiniciem el taulell
-      matches[idMatch].board = ["", "", "", "", "", "", "", "", ""]
+      matches[idMatch].board= createboard()
       
       // Esborrar el jugador de la partida
       let rival = ""
@@ -333,4 +333,31 @@ app.get('/shadows.js', getShadows)
 async function getShadows (req, res) {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(shadows.getShadows())
+}
+
+function createboard() {
+  let board = [
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
+  ]
+  for (let i = 0; i < 9; i++) {
+    while (true) {
+      let pos = Math.floor(Math.random() * 16)
+      if (board[pos] == "") {
+        board[pos] = i
+        break;
+      }
+    }
+    while (true) {
+      let pos = Math.floor(Math.random() * 16)
+      if (board[pos] == "") {
+        board[pos] = i
+        break;
+      }
+    }
+  }
+
+  return board;
 }
