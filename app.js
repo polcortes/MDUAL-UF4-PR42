@@ -78,7 +78,11 @@ ws.onConnection = (socket, id) => {
       playerX: id, 
       playerO: "", 
       board: createboard(),
-      nextTurn: "X"
+      selected_card: -1, 
+      selected_card2: -1,
+      nextTurn: "X",
+      playerXPoints: 0,
+      playerOPoints: 0
     })
   } else {
     // Si hi ha partides, mirem si n'hi ha alguna en espera de jugador
@@ -102,7 +106,11 @@ ws.onConnection = (socket, id) => {
         playerX: id, 
         playerO: "", 
         board: createboard(),
-        nextTurn: "X"
+        selected_card: -1, 
+        selected_card2: -1,
+        nextTurn: "X",
+        playerXPoints: 0,
+        playerOPoints: 0
       })
     }
   }
@@ -158,6 +166,8 @@ ws.onMessage = (socket, id, msg) => {
   let idSend = ""
   let wsSend = null
 
+  console.log(obj)
+
   // Busquem la partida a la que pertany el client
   for (let i = 0; i < matches.length; i++) {
     if (matches[i].playerX == id || matches[i].playerO == id) {
@@ -186,11 +196,28 @@ ws.onMessage = (socket, id, msg) => {
     case "cellChoice":
       // Si rebem la posició de la cel·la triada, actualitzem la partida
       playerTurn = matches[idMatch].nextTurn
-      matches[idMatch].board[obj.value] = playerTurn
-
+      //matches[idMatch].board[obj.value] = playerTurn
+      if (matches[idMatch].selected_card == -1) {
+        matches[idMatch].selected_card = obj.value
+      } else {
+        matches[idMatch].selected_card2 = obj.value
+      }
+      if (matches[idMatch].board[matches[idMatch].selected_card] == matches[idMatch].board[matches[idMatch].selected_card2] ) {
+        if (matches[idMatch].nextTurn == "X") {
+          matches[idMatch].playerXPoints++
+          matches[idMatch].board[matches[idMatch].selected_card] = ""
+          matches[idMatch].board[matches[idMatch].selected_card2] = ""
+        } else {
+          matches[idMatch].playerOPoints++
+          matches[idMatch].board[matches[idMatch].selected_card] = ""
+          matches[idMatch].board[matches[idMatch].selected_card2] = ""
+        }
+      }
       // Comprovem si hi ha guanyador
       let winner = ""
+      
       let board = matches[idMatch].board
+      /*
 
       // Verificar files
       if (board[0] == board[1] && board[0] == board[2]) winner = board[0]
@@ -205,22 +232,51 @@ ws.onMessage = (socket, id, msg) => {
       // Verificar diagonals
       else if (board[0] == board[4] && board[0] == board[8]) winner = board[0]
       else if (board[2] == board[4] && board[2] == board[6]) winner = board[2]
+      */
 
       // Comprovem si hi ha empat (ja no hi ha cap espai buit)
-      let tie = true
+      let tie = false
+      let gameFinished = true
       for (let i = 0; i < board.length; i++) {
-        if (board[i] == "") {
-          tie = false
+        if (board[i] != "") {
+          gameFinished = false;
           break
+        }
+      }
+
+      if (gameFinished) {
+        if (matches[idMatch].playerOPoints == matches[idMatch].playerXPoints) {
+          tie = true;
+        } else if (matches[idMatch].playerOPoints > matches[idMatch].playerXPoints) {
+          winner = "O"
+        } else {
+          winner = "X"
         }
       }
 
       if (winner == "" && !tie) {
         // Si no hi ha guanyador ni empat, canviem el torn
-        if (matches[idMatch].nextTurn == "X") {
-          matches[idMatch].nextTurn = "O"
-        } else {
-          matches[idMatch].nextTurn = "X"
+        if (matches[idMatch].selected_card != -1 && matches[idMatch].selected_card2 != -1) {
+          setTimeout(() => {
+            matches[idMatch].selected_card = -1
+            matches[idMatch].selected_card2 = -1
+            if (matches[idMatch].nextTurn == "X") {
+              matches[idMatch].nextTurn = "O"
+              idOpponent = matches[idMatch].playerO
+            } else {
+              matches[idMatch].nextTurn = "X"
+              idOpponent = matches[idMatch].playerX
+            }
+            let wsOpponent = ws.getClientById(idOpponent)
+            wsOpponent.send(JSON.stringify({
+              type: "gameRound",
+              value: matches[idMatch]
+            }))
+            socket.send(JSON.stringify({
+              type: "gameRound",
+              value: matches[idMatch]
+            }))
+          }, 1000)
         }
 
         // Informem al jugador de la partida

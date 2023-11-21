@@ -14,7 +14,10 @@ class GameViewPlaying extends HTMLElement {
             playerX: "",
             playerO: "",
             board: [],
-            nextTurn: "X"
+            selected_card: -1,
+            nextTurn: "X",
+            playerXPoints: 0,
+            playerOPoints: 0
         }
         this.opponentId = ""  // Conté l'id de l'oponent
         this.gameStatus = "waitingOpponent" 
@@ -27,6 +30,10 @@ class GameViewPlaying extends HTMLElement {
         this.imgXloaded = false
         this.imgO = null
         this.imgOloaded = false
+        this.images = null
+        this.imagesLoaded = null
+        this.imageBack = null
+        this.imageBackLoaded = null
 
         // Funcions per controlar el redibuix i els FPS
         this.reRunLastDrawTime = Date.now();  // Nova propietat per rastrejar l'últim temps de dibuix
@@ -41,13 +48,45 @@ class GameViewPlaying extends HTMLElement {
         // Quan es crea l'element shadow DOM (no quan es connecta el socket)
 
         // Preload images
+        /*
         this.imgX = new Image()
         this.imgX.src = '/images/imgX.png'
         this.imgX.onload = () => { this.imgXloaded = true }
 
         this.imgO = new Image()
         this.imgO.src = '/images/imgO.png'
-        this.imgO.onload = () => { this.imgOloaded = true }
+        this.imgO.onload = () => { this.imgOloaded = true 
+        */
+
+        this.images = []
+        let img = new Image()
+        img.src = "../../imgs/cards/arceus.jpeg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/charizard.webp"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/crobat.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/darkrai.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/pikachu.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/raichu.avif"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/raikou.png"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../imgs/cards/volcanion.jpg"
+        this.images.push(img)
+        this.images.onload = () => {this.imagesLoaded = true;}
+        this.imageBack = new Image()
+        this.imageBack.src = "../../imgs/cards/card-back.jpg"
+        this.imageBack.onload = () => {this.imageBackLoaded = true;}
 
         // Carrega els estils CSS
         const style = document.createElement('style')
@@ -171,8 +210,7 @@ class GameViewPlaying extends HTMLElement {
             this.cellOver = this.getCell(x, y)
 
             if (previousCellOver != this.cellOver) {
-
-                if (this.match.board[this.cellOver] == "") {
+                if (this.match.board[this.cellOver] && this.match.board[this.cellOver] != "") {
                     // Si és una casella jugable, canvia el cursor del ratolí
                     this.canvas.style.cursor = 'pointer'
                 } else {
@@ -204,11 +242,12 @@ class GameViewPlaying extends HTMLElement {
             // Utilitza la funció getCell per a obtenir l'índex de la casella
             this.cellOver = this.getCell(x, y)
 
-            if (this.match.board[this.cellOver] != "") {
+            if (!(this.match.board[this.cellOver] && this.match.board[this.cellOver] != "") || this.cellOver == this.match.selected_card || this.cellOver == this.match.selected_card2) {
                 this.cellOver = -1
             }    
 
             if (this.cellOver != -1) {
+                console.log(this.cellOver)
                 // Envia la jugada
                 sendServer({
                     type: "cellChoice",
@@ -481,6 +520,8 @@ class GameViewPlaying extends HTMLElement {
             colorBoard = "#888"
             colorOver = "#ccc"
         }
+        this.shadow.querySelector('#playerXPoints').innerHTML = "Player X Points: " + this.match.playerXPoints
+        this.shadow.querySelector('#playerOPoints').innerHTML = "Player O Points: " + this.match.playerOPoints
 
         // Per totes les caselles del tauler
         for (var cnt = 0; cnt < board.length; cnt++) {
@@ -507,9 +548,15 @@ class GameViewPlaying extends HTMLElement {
                     this.drawX(ctx, colorX, cellOverCords, cellSize)
                 } 
             }
-
-            // Dibuixa el requadre de la casella
             this.drawRect(ctx, 10, colorBoard, cellCoords.x, cellCoords.y, cellSize, cellSize)
+            if (cell != "") {
+                // Dibuixa el requadre de la casella
+                if (cnt != this.match.selected_card && cnt != this.match.selected_card2) {
+                    this.drawImage(ctx, this.imageBack, cellCoords, cellSize)
+                } else {
+                    this.drawImage(ctx, this.images[cell-1], cellCoords, cellSize)
+                }
+            }
 
             // Dibuixa el contingut de la casella
             if (cell == "X") {
