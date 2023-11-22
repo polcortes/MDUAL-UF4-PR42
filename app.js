@@ -82,7 +82,9 @@ ws.onConnection = (socket, id) => {
       selected_card2: -1,
       nextTurn: "X",
       playerXPoints: 0,
-      playerOPoints: 0
+      playerOPoints: 0,
+      playerXName: "",
+      playerOName: ""
     })
   } else {
     // Si hi ha partides, mirem si n'hi ha alguna en espera de jugador
@@ -110,7 +112,9 @@ ws.onConnection = (socket, id) => {
         selected_card2: -1,
         nextTurn: "X",
         playerXPoints: 0,
-        playerOPoints: 0
+        playerOPoints: 0,
+        playerXName: "",
+        playerOName: ""
       })
     }
   }
@@ -179,6 +183,38 @@ ws.onMessage = (socket, id, msg) => {
   // Processar el missatge rebut
   if (idMatch != -1) {
     switch (obj.type) {
+    case "setName":
+      if (matches[idMatch].playerX == id) {
+        matches[idMatch].playerXName = obj.value
+        if (matches[idMatch].playerX != "" && matches[idMatch].playerO != "") {
+          socket.send(JSON.stringify({
+            type: "gameRound",
+            value: matches[idMatch]
+          }))
+          let idOpponent = matches[idMatch].playerO
+          let wsOpponent = ws.getClientById(idOpponent)
+          wsOpponent.send(JSON.stringify({
+            type: "gameRound",
+            value: matches[idMatch]
+          }))
+        }
+      } else {
+        matches[idMatch].playerOName = obj.value
+        if (matches[idMatch].playerX != "" && matches[idMatch].playerO != "") {
+          socket.send(JSON.stringify({
+            type: "gameRound",
+            value: matches[idMatch]
+          }))
+          let idOpponent = matches[idMatch].playerX
+          let wsOpponent = ws.getClientById(idOpponent)
+          wsOpponent.send(JSON.stringify({
+            type: "gameRound",
+            value: matches[idMatch]
+          }))
+        }
+      }
+      break
+      
     case "cellOver":
       // Si revem la posició del mouse de qui està jugant, l'enviem al rival
       playerTurn = matches[idMatch].nextTurn
@@ -201,17 +237,6 @@ ws.onMessage = (socket, id, msg) => {
         matches[idMatch].selected_card = obj.value
       } else {
         matches[idMatch].selected_card2 = obj.value
-      }
-      if (matches[idMatch].board[matches[idMatch].selected_card] == matches[idMatch].board[matches[idMatch].selected_card2] ) {
-        if (matches[idMatch].nextTurn == "X") {
-          matches[idMatch].playerXPoints++
-          matches[idMatch].board[matches[idMatch].selected_card] = ""
-          matches[idMatch].board[matches[idMatch].selected_card2] = ""
-        } else {
-          matches[idMatch].playerOPoints++
-          matches[idMatch].board[matches[idMatch].selected_card] = ""
-          matches[idMatch].board[matches[idMatch].selected_card2] = ""
-        }
       }
       // Comprovem si hi ha guanyador
       let winner = ""
@@ -258,6 +283,17 @@ ws.onMessage = (socket, id, msg) => {
         // Si no hi ha guanyador ni empat, canviem el torn
         if (matches[idMatch].selected_card != -1 && matches[idMatch].selected_card2 != -1) {
           setTimeout(() => {
+            if (matches[idMatch].board[matches[idMatch].selected_card] == matches[idMatch].board[matches[idMatch].selected_card2] && matches[idMatch].selected_card != "" && matches[idMatch].selected_card != "") {
+              if (matches[idMatch].nextTurn == "X") {
+                matches[idMatch].playerXPoints++
+                matches[idMatch].board[matches[idMatch].selected_card] = ""
+                matches[idMatch].board[matches[idMatch].selected_card2] = ""
+              } else {
+                matches[idMatch].playerOPoints++
+                matches[idMatch].board[matches[idMatch].selected_card] = ""
+                matches[idMatch].board[matches[idMatch].selected_card2] = ""
+              }
+            }
             matches[idMatch].selected_card = -1
             matches[idMatch].selected_card2 = -1
             if (matches[idMatch].nextTurn == "X") {

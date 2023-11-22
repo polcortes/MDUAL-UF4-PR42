@@ -507,6 +507,7 @@ class GameViewPlaying extends HTMLElement {
     }
 
     drawBoard (ctx) {
+        console.log(this.match.playerOName)
         var cellSize = this.coords.cellSize
         var board = this.match.board
         var colorX = "red"
@@ -514,14 +515,21 @@ class GameViewPlaying extends HTMLElement {
         var colorBoard = "black"
         var colorOver = "lightblue"
 
+        /*
         if (!this.isMyTurn) {
             colorX = "#888"
             colorO = "#888"
             colorBoard = "#888"
             colorOver = "#ccc"
         }
-        this.shadow.querySelector('#playerXPoints').innerHTML = "Player X Points: " + this.match.playerXPoints
-        this.shadow.querySelector('#playerOPoints').innerHTML = "Player O Points: " + this.match.playerOPoints
+        */
+        if (this.match.nextTurn == "X") {
+            this.shadow.querySelector('#nextTurn').innerHTML = this.match.playerXName + "'s turn"
+        } else {
+            this.shadow.querySelector('#nextTurn').innerHTML = this.match.playerOName + "'s turn"
+        }
+        this.shadow.querySelector('#playerXPoints').innerHTML = this.match.playerXName + " Points: " + this.match.playerXPoints
+        this.shadow.querySelector('#playerOPoints').innerHTML = this.match.playerOName + " Points: " + this.match.playerOPoints
 
         // Per totes les caselles del tauler
         for (var cnt = 0; cnt < board.length; cnt++) {
@@ -529,26 +537,16 @@ class GameViewPlaying extends HTMLElement {
             var cellCoords = this.coords.cells[cnt]
 
             // Si toca jugar, i el ratolí està sobre la casella, dibuixa la simulació de partida
-            if (this.isMyTurn && this.cellOver == cnt && board[cnt] == "") {
+            if (this.isMyTurn && this.cellOver == cnt && board[cnt] != "" && this.cellOver != this.match.selected_card && this.cellOver != this.match.selected_card2) {
                 this.fillRect(ctx, 10, colorOver, cellCoords.x, cellCoords.y, cellSize, cellSize)
-                if (this.player == "X") {
-                   this.drawX(ctx, colorX, cellCoords, cellSize)
-                } else {
-                    this.drawO(ctx, colorO, cellCoords, cellSize)
-                } 
             }
 
             // Si no toca jugar i la casella coincideix amb la posició del ratolí de l'oponent, ho dibuixem
             if (!this.isMyTurn && this.cellOpponentOver == cnt) {
                 var cellOverCords = this.coords.cells[this.cellOpponentOver]
                 this.fillRect(ctx, 10, colorOver, cellCoords.x, cellCoords.y, cellSize, cellSize)
-                if (this.player == "X") {
-                   this.drawO(ctx, colorO, cellOverCords, cellSize)
-                } else {
-                    this.drawX(ctx, colorX, cellOverCords, cellSize)
-                } 
             }
-            this.drawRect(ctx, 10, colorBoard, cellCoords.x, cellCoords.y, cellSize, cellSize)
+            //this.drawRect(ctx, 10, colorBoard, cellCoords.x, cellCoords.y, cellSize, cellSize)
             if (cell != "") {
                 // Dibuixa el requadre de la casella
                 if (cnt != this.match.selected_card && cnt != this.match.selected_card2) {
